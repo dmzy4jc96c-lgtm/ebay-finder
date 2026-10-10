@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>باحث منتجات إيباي</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f7;--ink:#13222c;--mute:#5b6b76;--card:#fff;--line:#d8e0e5;--ok:#0f766e;--okbg:#d9f2ee;--mid:#a16207;--midbg:#fdf0cf;--bad:#b42318;--badbg:#fde4e1;--accent:#13222c}
+@media(prefers-color-scheme:dark){:root{--bg:#0e171d;--ink:#e8eef2;--mute:#93a4af;--card:#16232b;--line:#26363f;--ok:#5eead4;--okbg:#10393a;--mid:#fcd34d;--midbg:#3a2f0d;--bad:#fca5a5;--badbg:#3d1815;--accent:#e8eef2}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;line-height:1.7;padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
+main{max-width:720px;margin:0 auto}
+h1{font-size:1.5rem;margin:8px 0 4px}
+h2{font-size:1.05rem;margin:0 0 8px}
+.sub{color:var(--mute);margin:0 0 18px;font-size:.95rem}
+label{font-weight:500;font-size:.95rem}
+textarea,input[type=text]{width:100%;margin:6px 0 12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit}
+textarea{min-height:96px;resize:vertical}
+textarea:focus,input:focus,button:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
+button.go{width:100%;padding:14px;border:0;border-radius:10px;background:var(--accent);color:var(--bg);font:inherit;font-weight:700;font-size:1rem;cursor:pointer}
+button.go:disabled{opacity:.6}
+button.sec{padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hint{color:var(--mute);font-size:.85rem;margin:6px 0 0}
+#banner{display:none;background:var(--midbg);color:var(--mid);padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:.9rem}
+#status{margin:18px 0;color:var(--mute)}
+.err{color:var(--bad)}
+.item{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}
+.item.top{border-width:2px;border-color:var(--ok)}
+.head{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;width:100%;background:none;border:0;color:inherit;font:inherit;text-align:start}
+.score{min-width:52px;height:52px;border-radius:10px;display:grid;place-items:center;font-weight:700;font-size:1.2rem}
+.suitable .score,.suitable .tag{background:var(--okbg);color:var(--ok)}
+.medium .score,.medium .tag{background:var(--midbg);color:var(--mid)}
+.high_risk .score,.high_risk .tag{background:var(--badbg);color:var(--bad)}
+.name{flex:1;font-weight:700}
+.name small{display:block;font-weight:400;color:var(--mute);font-size:.82rem}
+.tag{font-size:.8rem;padding:2px 10px;border-radius:99px;font-weight:500}
+.body{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+.item.open .body{display:block}
+.body ul{margin:8px 0;padding-inline-start:20px}
+.body h3{font-size:.9rem;margin:12px 0 0}
+.flag{background:var(--badbg);color:var(--bad);padding:8px 12px;border-radius:8px;margin-top:10px;font-size:.9rem}
+.note{font-size:.82rem;color:var(--mute);margin-top:12px}
+.hist button{margin:4px 0 0 6px}
+</style>
+</head>
+<body>
+<main>
+<h1>باحث منتجات إيباي</h1>
+<p class="sub">يفحص السوق الحي والمبيعات ويرتب لك المنتجات من الأنسب للأخطر.</p>
+<div id="banner"></div>
+
+<label for="seeds">كلمات البحث (افصل بينها بفاصلة)</label>
+<textarea id="seeds">portable blender, car phone mount, dog harness, led strip lights, yoga mat, desk organizer, resistance bands, phone tripod, camping lantern, kitchen scale</textarea>
+<button class="go" id="go">ابحث عن أفضل منتج الآن</button>
+
+<div class="panel">
+  <h2>بيانات المبيعات من ملفك (اختياري)</h2>
+  <p class="hint" style="margin-top:0">صدّر مبيعات الكلمة من Terapeak كملف CSV وارفعه هنا، وبنستخدمه لقياس الطلب الفعلي.</p>
+  <label for="skw">الكلمة التي يخصها الملف</label>
+  <input type="text" id="skw" placeholder="مثال: portable blender" dir="ltr">
+  <div class="row"><input type="file" id="sfile" accept=".csv,text/csv"><button class="sec" id="sclear">مسح المبيعات المحفوظة</button></div>
+  <div id="sinfo" class="hint"></div>
+</div>
+
+<div id="status" aria-live="polite"></div>
+<div id="results"></div>
+<div id="exp" style="display:none"><button class="sec" id="exportBtn">تصدير النتائج CSV</button></div>
+
+<div class="panel hist" id="histPanel" style="display:none">
+  <h2>آخر عمليات البحث</h2><div id="hist"></div>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const LABEL={suitable:'مناسب',medium:'متوسط',high_risk:'عالي المخاطرة'};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function ls(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+let last=[];
+
+fetch('/health').then(r=>r.json()).then(j=>{if(!j.keys){const b=$('banner');b.style.display='block';b.textContent='مفاتيح إيباي غير مضبوطة على السيرفر (EBAY_APP_ID و EBAY_CERT_ID). البحث لن يعمل قبل ضبطها.'}}).catch(()=>{});
+
+// ---- مبيعات من ملف CSV ----
+function parseCSV(t){
+  const rows=[];let r=[],c='',q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch=='"'){if(t[i+1]=='"'){c+='"';i++}else q=false}else c+=ch}
+    else if(ch=='"')q=true;
+    else if(ch==','){r.push(c);c=''}
+    else if(ch=='\n'||ch=='\r'){if(ch=='\r'&&t[i+1]=='\n')i++;r.push(c);c='';if(r.some(x=>x.trim()))rows.push(r);r=[]}
+    else c+=ch}
+  if(c||r.length){r.push(c);rows.push(r)}
+  return rows;
+}
+function salesInfo(){const m=ls('sold',{});const k=Object.keys(m);$('sinfo').textContent=k.length?'محفوظ: '+k.map(x=>x+' ('+m[x].soldQty+' قطعة)').join('، '):''}
+$('sfile').onchange=async e=>{
+  const f=e.target.files[0];const kw=$('skw').value.trim().toLowerCase();
+  if(!f)return;
+  if(!kw){$('sinfo').innerHTML='<span class="err">اكتب الكلمة أولاً ثم اختر الملف.</span>';e.target.value='';return}
+  const rows=parseCSV(await f.text());
+  if(rows.length<2){$('sinfo').innerHTML='<span class="err">الملف فارغ.</span>';return}
+  const head=rows[0].map(h=>h.trim().toLowerCase());
+  const qi=head.findIndex(h=>/(quantity|qty|sold|مباع|كمية)/.test(h));
+  const pi=head.findIndex(h=>/price|سعر/.test(h));
+  let qty=0,ps=[];
+  rows.slice(1).forEach(r=>{
+    const n=qi>=0?parseFloat((r[qi]||'').replace(/[^0-9.]/g,'')):1;
+    qty+=isNaN(n)?1:n;
+    if(pi>=0){const p=parseFloat((r[pi]||'').replace(/[^0-9.]/g,''));if(p)ps.push(p)}
+  });
+  const m=ls('sold',{});m[kw]={soldQty:Math.round(qty),rows:rows.length-1,avgPrice:ps.length?ps.reduce((a,b)=>a+b,0)/ps.length:null};
+  lsSet('sold',m);salesInfo();e.target.value='';
+  $('sinfo').insertAdjacentText('beforeend',' · تم حفظ المبيعات، اضغط بحث لتطبيقها.');
+};
+$('sclear').onclick=()=>{lsSet('sold',{});salesInfo()};
+salesInfo();
+
+// ---- البحث ----
+$('go').onclick=async()=>{
+  const seeds=$('seeds').value.split(/[,\n،]/).map(s=>s.trim()).filter(Boolean);
+  if(!seeds.length){$('status').innerHTML='<span class="err">اكتب كلمة بحث واحدة على الأقل.</span>';return}
+  $('go').disabled=true;$('results').innerHTML='';$('exp').style.display='none';$('status').textContent='جاري فحص السوق...';
+  try{
+    const sold=ls('sold',{});
+    const r=await fetch('/api/discover?seeds='+encodeURIComponent(seeds.join(','))+'&sold='+encodeURIComponent(JSON.stringify(sold)));
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||'خطأ غير معروف');
+    last=j.results;render(last);
+    const h=ls('hist',[]);h.unshift({t:Date.now(),seeds:seeds.join(', '),best:(last.find(x=>!x.error)||{}).q||''});lsSet('hist',h.slice(0,8));renderHist();
+  }catch(e){$('status').innerHTML='<span class="err">'+esc(e.message)+'</span>'}
+  $('go').disabled=false;
+};
+function render(list){
+  const ok=list.filter(x=>!x.error),errs=list.filter(x=>x.error),best=ok[0];
+  $('status').textContent=best?`أفضل خيار حالياً: ${best.q} (${best.score}/100)`:'ما طلعت نتائج.';
+  $('exp').style.display=ok.length?'block':'none';
+  $('results').innerHTML=ok.map((x,i)=>`
+    <div class="item ${x.verdict} ${i===0?'top':''}">
+      <button class="head" aria-expanded="false">
+        <div class="score">${x.score}</div>
+        <div class="name">${esc(x.q)}<small>${x.total.toLocaleString()} إعلان · سعر وسطي $${x.medianPrice.toFixed(0)}${x.sellThrough!=null?' · بيع '+Math.round(x.sellThrough*100)+'%':''}</small></div>
+        <span class="tag">${LABEL[x.verdict]}</span>
+      </button>
+      <div class="body">
+        ${x.flags.map(f=>`<div class="flag">${esc(f)}</div>`).join('')}
+        ${x.good.length?'<h3>نقاط القوة</h3><ul>'+x.good.map(g=>`<li>${esc(g)}</li>`).join('')+'</ul>':''}
+        ${x.bad.length?'<h3>المخاطر</h3><ul>'+x.bad.map(g=>`<li>${esc(g)}</li>`).join('')+'</ul>':''}
+        <div class="note">${x.soldSource==='file'?'الطلب محسوب من ملف مبيعاتك.':x.soldSource==='ebay'?'الطلب محسوب من بيانات مبيعات إيباي.':'التقييم تقديري: لا توجد بيانات مبيعات لهذه الكلمة. ارفع ملف Terapeak لتحسين الدقة.'}</div>
+      </div>
+    </div>`).join('')+errs.map(x=>`<p class="err">${esc(x.q)}: ${esc(x.error)}</p>`).join('')
+    +'<p class="note">الدرجة مؤشر ملاءمة مبني على بيانات السوق، وليست ضمان بيع أو ربح.</p>';
+  document.querySelectorAll('.head').forEach(h=>h.onclick=()=>{const it=h.parentElement;h.setAttribute('aria-expanded',it.classList.toggle('open'))});
+}
+
+// ---- تصدير وسجل ----
+$('exportBtn').onclick=()=>{
+  const rows=[['keyword','score','verdict','listings','median_price','sell_through']].concat(last.filter(x=>!x.error).map(x=>[x.q,x.score,x.verdict,x.total,x.medianPrice.toFixed(2),x.sellThrough==null?'':x.sellThrough.toFixed(3)]));
+  const blob=new Blob(['\ufeff'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ebay-results.csv';a.click();
+};
+function renderHist(){
+  const h=ls('hist',[]);$('histPanel').style.display=h.length?'block':'none';
+  $('hist').innerHTML=h.map((x,i)=>`<div class="row" style="justify-content:space-between;margin:6px 0"><span>${new Date(x.t).toLocaleDateString('ar')} · الأفضل: <b dir="ltr">${esc(x.best)}</b></span><button class="sec" data-i="${i}">إعادة</button></div>`).join('');
+  $('hist').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('seeds').value=h[b.dataset.i].seeds;window.scrollTo({top:0,behavior:'smooth'})});
+}
+renderHist();
+</script>
+</body>
+</html>
