@@ -1,0 +1,8 @@
+{
+  "name": "ebay-finder",
+  "version": "1.0.0",
+  "description": "Finds products worth selling on eBay and rates their risk",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

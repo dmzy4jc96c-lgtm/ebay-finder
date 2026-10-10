@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ebay-finder
+    runtime: node
+    plan: free
+    buildCommand: "echo no build"
+    startCommand: "node server.js"
+    envVars:
+      - key: EBAY_APP_ID
+        sync: false
+      - key: EBAY_CERT_ID
+        sync: false
+      - key: EBAY_MARKETPLACE
+        value: EBAY_US
